@@ -8,17 +8,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var programs: [Program] = loadPrograms()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            AddProgramView(programs: $programs)
+                .tabItem { Label("Add", systemImage: "plus") }
+            
+            ProgramListView(programs: $programs)
+                .tabItem { Label("Programs", systemImage: "list.bullet") }
+            
+            OverviewHomeView(programs: programs)
+                .tabItem { Label("Overview", systemImage: "chart.pie") }
         }
-        .padding()
+        .accentColor(.ink)
+        .background(Color.canvas.ignoresSafeArea())
     }
 }
 
-#Preview {
-    ContentView()
-}
