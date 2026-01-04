@@ -7,16 +7,20 @@
 
 import Foundation
 
-func savePrograms(_ programs: [Program]) {
-    if let data = try? JSONEncoder().encode(programs) {
-        UserDefaults.standard.set(data, forKey: "programs")
-    }
-}
+struct Storage {
+    static let key = "programs"
 
-func loadPrograms() -> [Program] {
-    if let data = UserDefaults.standard.data(forKey: "programs"),
-       let decoded = try? JSONDecoder().decode([Program].self, from: data) {
-        return decoded
+    static func savePrograms(_ programs: [Program]) {
+        if let data = try? JSONEncoder().encode(programs) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
     }
-    return []
+
+    static func loadPrograms() -> [Program] {
+        if let data = UserDefaults.standard.data(forKey: key),
+           let decoded = try? JSONDecoder().decode([Program].self, from: data) {
+            return decoded
+        }
+        return []
+    }
 }

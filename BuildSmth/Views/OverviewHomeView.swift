@@ -8,20 +8,38 @@
 import SwiftUI
 
 struct OverviewHomeView: View {
-    let programs: [Program]
+    @Binding var programs: [Program]
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                NavigationLink("By Tag") {
-                    TagOverviewView(programs: programs)
-                }
-                NavigationLink("By Month") {
-                    MonthCalendarView(programs: programs)
+        VStack(spacing: 20) {
+            AppHeader(title: "Overview")
+            
+            NavigationLink {
+                OverviewCountryView(programs: $programs)
+            } label: {
+                card {
+                    HStack {
+                        Image(systemName: "globe")
+                        Text("By Country")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                    }
                 }
             }
-            .padding()
-            .navigationTitle("Overview")
+            
+            NavigationLink {
+                MonthCalendarView(programs: $programs)
+            } label: {
+                card {
+                    HStack {
+                        Image(systemName: "calendar")
+                        Text("By Month")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                    }
+                }
+            }
         }
+        .padding()
     }
 }

@@ -8,99 +8,133 @@
 import SwiftUI
 
 struct MonthCalendarView: View {
-    let programs: [Program]
-    @State private var selectedProgram: Program?
+    @Binding var programs: [Program]
+    @State private var selectedProgram: Program? = nil
+    @State private var showPopup = false
     
-    // Group programs by month-year string
-    var programsByMonth: [String: [Program]] {
-        Dictionary(grouping: programs) { prog in
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM yyyy"
-            return formatter.string(from: prog.applicationDeadline)
-        }
-    }
+    let calendar = Calendar.current
+    let months = Calendar.current.monthSymbols
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                ForEach(programsByMonth.keys.sorted(), id: \.self) { month in
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(month).font(.title3).bold()
+            VStack(spacing: 16) {
+                AppHeader(title: "Overview by Month")
+                
+                ForEach(1...12, id: \.self) { monthIndex in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(months[monthIndex - 1])
+                            .font(.headline)
+                            .padding(.leading, 8)
                         
-                        // Calendar grid (7 columns)
-                        let programsInMonth = programsByMonth[month] ?? []
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 12) {
-                            ForEach(programsInMonth) { program in
-                                let day = Calendar.current.component(.day, from: program.applicationDeadline)
-                                
-                                Button {
-                                    selectedProgram = program
-                                } label: {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.red)
-                                            .frame(width: 30, height: 30)
-                                        Text("\(day)")
-                                            .font(.caption)
-                                            .foregroundColor(.white)
-                                    }
+                        let daysInMonth = daysForMonth(monthIndex)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+                            ForEach(daysInMonth, id: \.self) { day in
+                                let programsOnDay = programs.filter {
+                                    let comp = calendar.dateComponents([.year, .month, .day], from: $0.applicationDeadline)
+                                    return comp.month == monthIndex && comp.day == day
                                 }
+                                
+                                Text("\(day)")
+                                    .frame(width: 30, height: 30)
+                                    .background(programsOnDay.isEmpty ? Color.clear : Color.red.opacity(0.7))
+                                    .cornerRadius(15)
+                                    .foregroundColor(programsOnDay.isEmpty ? .black : .white)
+                                    .onTapGesture {
+                                        if let firstProgram = programsOnDay.first {
+                                            selectedProgram = firstProgram
+                                            showPopup = true
+                                        }
+                                    }
                             }
                         }
                     }
-                    .padding()
                 }
             }
+            .padding()
         }
         .overlay {
-            if let program = selectedProgram {
+            if showPopup, let program = selectedProgram {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
-                    .onTapGesture { selectedProgram = nil }
-                
-                VStack {
-                    card {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Text(program.name).font(.title2).bold()
-                                    Spacer()
-                                    Button {
-                                        selectedProgram = nil
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.title2)
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                                
-                                Divider()
-                                
-                                Text("Location: \(program.location)")
-                                Text("Period: \(program.programPeriod)")
-                                
-                                Text("Requirements:")
-                                ForEach(program.requirements, id: \.self) {
-                                    Text("• \($0)")
-                                }
-                                
-                                if !program.tags.isEmpty {
-                                    Text("Tags: \(program.tags.joined(separator: ", "))")
-                                }
-                                
-                                Text("Website: \(program.website)")
-                                    .foregroundColor(.blue)
-                                    .underline()
-                            }
-                            .padding(.vertical)
-                        }
-                        .frame(maxHeight: 400)
+                    .onTapGesture {
+                        showPopup = false
+                        selectedProgram = nil
                     }
-                    .padding()
-                }
+                
+                popupCard(program: program)
+                    .transition(.scale)
             }
         }
-        .navigationTitle("By Month")
+    }
+    
+    // Calculate all days for a given month (assuming current year)
+    func daysForMonth(_ month: Int) -> [Int] {
+        let year = calendar.component(.year, from: Date())
+        let dateComponents = DateComponents(year: year, month: month)
+        guard let date = calendar.date(from: dateComponents),
+              let range = calendar.range(of: .day, in: .month, for: date) else {
+            return []
+        }
+        return Array(range)
+    }
+    
+    // Popup card
+    @ViewBuilder
+    func popupCard(program: Program) -> some View {
+        VStack(spacing: 12) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(program.name)
+                        .font(.title2)
+                        .bold()
+                    
+                    Text("Theme: \(program.theme.rawValue)")
+                    Text("Virtual: \(program.isVirtual ? "Yes" : "No")")
+                    Text("Country: \(program.country), City: \(program.city)")
+                    
+                    Text("Application Deadline: \(program.applicationDeadline, style: .date)")
+                    if let start = program.startDate {
+                        Text("Start Date: \(start, style: .date)")
+                    } else {
+                        Text("Start Date: Not specified")
+                    }
+                    
+                    if let end = program.endDate {
+                        Text("End Date: \(end, style: .date)")
+                    } else {
+                        Text("End Date: Not specified")
+                    }
+                    
+                    if !program.requirements.isEmpty {
+                        Text("Requirements:")
+                            .bold()
+                        ForEach(program.requirements, id: \.self) { req in
+                            Text("• \(req)")
+                        }
+                    }
+                    
+                    if !program.website.isEmpty {
+                        Link("Website", destination: URL(string: program.website)!)
+                            .foregroundColor(.blue)
+                    }
+                }
+                .padding()
+            }
+            
+            Button("Close") {
+                showPopup = false
+                selectedProgram = nil
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.burntOrange)
+            .foregroundColor(.white)
+            .cornerRadius(14)
+            .padding([.leading, .trailing, .bottom])
+        }
+        .frame(maxWidth: 350, maxHeight: 500)
+        .background(Color.softGray)
+        .cornerRadius(18)
+        .shadow(radius: 8)
     }
 }
-

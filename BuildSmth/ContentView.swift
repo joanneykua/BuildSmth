@@ -8,21 +8,19 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var programs: [Program] = loadPrograms()
+    @State private var programs: [Program] = Storage.loadPrograms()
     
     var body: some View {
         TabView {
             AddProgramView(programs: $programs)
-                .tabItem { Label("Add", systemImage: "plus") }
+                .tabItem { Label("Add Program", systemImage: "plus") }
             
             ProgramListView(programs: $programs)
-                .tabItem { Label("Programs", systemImage: "list.bullet") }
+                .tabItem { Label("All Programs", systemImage: "list.bullet") }
             
-            OverviewHomeView(programs: programs)
-                .tabItem { Label("Overview", systemImage: "chart.pie") }
+            OverviewHomeView(programs: $programs)
+                .tabItem { Label("Overview", systemImage: "square.grid.2x2") }
         }
-        .accentColor(.ink)
-        .background(Color.canvas.ignoresSafeArea())
     }
 }
 

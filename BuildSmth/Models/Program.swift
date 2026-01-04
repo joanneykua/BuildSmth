@@ -5,21 +5,26 @@
 //  Created by Joanne Kuang on 2026/1/4.
 //
 
-import Foundation
+import SwiftUI
 
-enum ProgramTheme: String, Codable, CaseIterable {
-    case physics, cs, math, engineering, interdisciplinary, other
+enum ProgramTheme: String, CaseIterable, Codable {
+    case physics, engineering, computerScience = "Computer Science", mathematics, biology, chemistry, business, arts, socialScience = "Social Science", law, medicine, psychology
 }
 
-struct Program: Identifiable, Codable {
+struct Program: Identifiable, Codable, Equatable {
     var id = UUID()
+    
     var name: String
     var requirements: [String]
     var applicationDeadline: Date
-    var programPeriod: String
-    var location: String
+    var startDate: Date?
+    var endDate: Date?
+    var hasStartDate: Bool { startDate != nil }
+    var hasEndDate: Bool { endDate != nil }
+    
+    var country: String
+    var city: String
+    var isVirtual: Bool
     var theme: ProgramTheme
-    var participantLimit: Int?
     var website: String
-    var tags: [String]
 }
