@@ -60,6 +60,7 @@ struct Program: Identifiable, Codable, Equatable {
     var theme: ProgramTheme
     var website: String
     
+    var isStarred: Bool = false
     
     func formattedText() -> String {
         var text = """
