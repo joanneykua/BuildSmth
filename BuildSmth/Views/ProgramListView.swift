@@ -16,70 +16,37 @@ struct ProgramListView: View {
     @State private var expandedProgram: UUID? = nil
     @State private var showCopyAlert = false
     @State private var isSelectionMode = false
+    @State private var hidePastPrograms = false
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                if !programs.isEmpty {
-                    // Action bar
-                    HStack {
-                        if isSelectionMode {
-                            Button(action: {
-                                if selectedPrograms.count == programs.count {
-                                    selectedPrograms.removeAll()
-                                } else {
-                                    selectedPrograms = Set(programs.map { $0.id })
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: selectedPrograms.count == programs.count ? "checkmark.square.fill" : "square")
-                                    Text("Select All")
-                                }
-                                .foregroundColor(.vibrantBlue)
+                // MARK: - Top Row: Hide Past Toggle + Select Button
+                HStack {
+                    Toggle("Hide Past Programs", isOn: $hidePastPrograms)
+                        .toggleStyle(SwitchToggleStyle(tint: .vibrantBlue))
+                    
+                    Spacer(minLength: 30)
+                    
+                    if !programs.isEmpty {
+                        Button(action: { isSelectionMode.toggle() }) {
+                            HStack {
+                                Image(systemName: "checkmark.circle")
+                                Text("Select")
                             }
-                            
-                            Spacer()
-                            
-                            Button(action: copySelectedPrograms) {
-                                HStack {
-                                    Image(systemName: "doc.on.doc.fill")
-                                    Text("Copy (\(selectedPrograms.count))")
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(selectedPrograms.isEmpty ? Color.gray : Color.vibrantGreen)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                            }
-                            .disabled(selectedPrograms.isEmpty)
-                            
-                            Button(action: {
-                                isSelectionMode = false
-                                selectedPrograms.removeAll()
-                            }) {
-                                Text("Cancel")
-                                    .foregroundColor(.red)
-                            }
-                        } else {
-                            Spacer()
-                            Button(action: { isSelectionMode = true }) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle")
-                                    Text("Select")
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.vibrantBlue)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.vibrantBlue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                         }
                     }
-                    .padding()
-                    .background(Color.softGray.opacity(0.5))
                 }
+                .padding()
+                .background(Color.softGray.opacity(0.5))
                 
                 if programs.isEmpty {
+                    // Empty state
                     VStack(spacing: 20) {
                         Spacer()
                         Image(systemName: "tray")
@@ -93,9 +60,15 @@ struct ProgramListView: View {
                         Spacer()
                     }
                 } else {
+                    // MARK: - Sorted & Filtered Programs
+                    let filteredPrograms = programs
+                        .filter { !hidePastPrograms || $0.applicationDeadline >= Date() }
+                        .sorted { $0.applicationDeadline < $1.applicationDeadline }
+                    
                     List {
-                        ForEach(programs) { program in
+                        ForEach(filteredPrograms) { program in
                             VStack(spacing: 0) {
+                                // Collapsed row
                                 Button(action: {
                                     if isSelectionMode {
                                         toggleSelection(program.id)
@@ -112,6 +85,7 @@ struct ProgramListView: View {
                                                 .foregroundColor(selectedPrograms.contains(program.id) ? .vibrantBlue : .gray)
                                         }
                                         
+                                        // Theme color indicator
                                         RoundedRectangle(cornerRadius: 4)
                                             .fill(program.theme.color)
                                             .frame(width: 4, height: 50)
@@ -159,6 +133,7 @@ struct ProgramListView: View {
                                 }
                                 .buttonStyle(.plain)
                                 
+                                // Expanded row
                                 if expandedProgram == program.id {
                                     VStack(alignment: .leading, spacing: 12) {
                                         Divider()
